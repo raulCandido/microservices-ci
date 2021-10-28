@@ -21,3 +21,6 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
+      - name: Build eureka Naming server Container Image
+        working-directory: ./naming-server
+        run: mvn spring-boot:build-image -DskupTests
