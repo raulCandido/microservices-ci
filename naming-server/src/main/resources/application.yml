@@ -1,0 +1,11 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: naming-server
+    #configuracao para evitar que o eurekaserver busque mais instancias de si mesmo (para desenvolvimento)
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
