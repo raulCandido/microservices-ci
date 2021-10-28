@@ -1,0 +1,1 @@
+INSERT INTO cambio (from_currency, to_currency, conversion_factor) VALUES ('RP', 'BRL', 2.73)

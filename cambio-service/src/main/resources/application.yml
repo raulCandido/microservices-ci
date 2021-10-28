@@ -1,0 +1,45 @@
+server:
+  port: 8000
+logging:
+  level:
+    root: debug
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
+spring:
+  application:
+    name: cambio-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cambio_bd?currentSchema=public
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQL9Dialect
+    open-in-view: false
+    generate-ddl: true
+    
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+  
+  flyway:
+    url: jdbc:postgresql://localhost:5432/cambio_bd?currentSchema=public
+    user: postgres
+    password: postgres
+    enabled: true
+  sleuth:
+    sampler:
+      probability: 1.0
+#  zipkin:
+#    base-url: http://127.0.0.1:9411/zipkin
+springdoc:
+  api-docs:
+    path: /cambio-service/v3/api-docs
