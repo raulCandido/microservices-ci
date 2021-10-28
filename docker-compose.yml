@@ -1,0 +1,141 @@
+version: '3.4'
+
+services:
+  zipkin-server:
+    image: openzipkin/zipkin
+    ports:
+      - 9411:9411
+    restart: always
+    depends_on:
+      - rabbit-mq
+    environment:
+      RABBIT_URI: amqp://guest:guest@rabbit-mq:5672
+    networks:
+      - microservice-network
+  rabbit-mq:
+    image: rabbitmq:3.9.8-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    networks:
+      - microservice-network
+  cambio-db:
+    image: postgres
+    restart: always
+    ports:
+      - 5434:5432
+    environment:
+      TZ: America/Sao_Paulo
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: cambio_bd
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - microservice-network
+  book-db:
+    image: postgres
+    restart: always
+    ports:
+      - 5433:5432
+    environment:
+      TZ: America/Sao_Paulo
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: book_bd
+    networks:
+      - microservice-network
+  name-server:
+    image: raulcandido/naming-server:0.0.1-SNAPSHOT
+    ports:
+      - 8761:8761
+    networks:
+      - microservice-network
+  api-gateway:
+    image: raulcandido/api-gateway:0.0.1-SNAPSHOT
+    ports:
+      - 8765:8765
+    depends_on:
+      - name-server
+      - rabbit-mq
+    environment:
+      SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411/
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://name-server:8761/eureka
+      RABBIT_URI: amqp://guest:guest@rabbit-mq:5672
+      SPRING_RABBITMQ_HOST: rabbit-mq
+      SPRING_ZIPKIN_SENDER_TYPE: rabbit
+    networks:
+      - microservice-network
+  cambio-service:
+    image: raulcandido/cambio-service
+    restart: always
+    build:
+      context: .
+      dockerfile: cambio-service/Dockerfile
+    ports:
+      - 8000:8000
+    environment:
+      TZ: America/Sao_Paulo
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://name-server:8761/eureka
+      SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411/
+      RABBIT_URI: amqp://guest:guest@rabbit-mq:5672
+      SPRING_RABBITMQ_HOST: rabbit-mq
+      SPRING_ZIPKIN_SENDER_TYPE: rabbit
+      SPRING.DATASOURCE.URL: jdbc:postgresql://cambio-db:5432/cambio_bd?currentSchema=cambio_bd
+      SPRING.DATASOURCE.DRIVERCLASSNAME: org.postgresql.Driver
+      SPRING.DATASOURCE.USERNAME: root
+      SPRING.DATASOURCE.PASSWORD: root
+      SPRING.JPA.DATABASE: postgresql
+      SPRING.JPA.DATABASEPLATFORM: org.hibernate.dialect.PostgreSQL9Dialect
+      SPRING.FLYWAY.URL: jdbc:postgresql://cambio-db:5432/cambio_bd?currentSchema=cambio_bd
+      SPRING.FLYWAY.USER: root
+      SPRING.FLYWAY.PASSWORD: root
+      SPRING.FLYWAY.ENABLED: 'true'
+    depends_on:
+      - cambio-db
+      - name-server
+      - rabbit-mq
+    networks:
+      - microservice-network
+  book-service:
+    image: raulcandido/book-service
+    restart: always
+    build:
+      context: .
+      dockerfile: book-service/Dockerfile
+    ports:
+      - 8100:8100
+    environment:
+      TZ: America/Sao_Paulo
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://name-server:8761/eureka
+      SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411/
+      RABBIT_URI: amqp://guest:guest@rabbit-mq:5672
+      SPRING_RABBITMQ_HOST: rabbit-mq
+      SPRING_ZIPKIN_SENDER_TYPE: rabbit
+      SPRING.DATASOURCE.URL: jdbc:postgresql://book-db:5432/book_bd?currentSchema=book_bd
+      SPRING.DATASOURCE.DRIVERCLASSNAME: org.postgresql.Driver
+      SPRING.DATASOURCE.USERNAME: root
+      SPRING.DATASOURCE.PASSWORD: root
+      SPRING.JPA.DATABASE: postgresql
+      SPRING.JPA.DATABASEPLATFORM: org.hibernate.dialect.PostgreSQL9Dialect
+      SPRING.FLYWAY.URL: jdbc:postgresql://book-db:5432/book_bd?currentSchema=book_bd
+      SPRING.FLYWAY.USER: root
+      SPRING.FLYWAY.PASSWORD: root
+      SPRING.FLYWAY.ENABLED: 'true'
+    depends_on:
+      - book-db
+      - name-server
+      - rabbit-mq
+    networks:
+      - microservice-network
+volumes:
+  pgdata:
+networks:
+  microservice-network:
+    driver: bridge
+
+
+
+
+
+
